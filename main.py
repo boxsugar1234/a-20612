@@ -37,7 +37,7 @@ data = load_data()
 # 사이드바 영역에 영화 선택 UI 구성
 st.sidebar.header("🔍 옵션 선택")
 
-# 누적관객수 최대값 기준으로 영화명 정렬 (중복 제거)
+# 누적관객수 최대값 기준으로 전체 영화명 정렬 (중복 제거)
 movie_rank = (
     data.groupby("영화명")["누적관객수"]
     .max()
@@ -58,7 +58,7 @@ tab1, tab2, tab3 = st.tabs(
     [
         "📈 개별 영화 일별 관객수",
         "📊 개별 영화 누적 관객수",
-        "🏆 TOP 5 영화 누적 관객수 비교",
+        "🏆 TOP 5 영화 누적 관객수 비교 (20일 이상 유지)",
     ]
 )
 
@@ -112,38 +112,49 @@ with tab2:
     )
 
 
-# [세 번째 탭: TOP 5 영화 누적 관객수 비교 다중 선그래프]
+# [세 번째 탭: 조건을 만족하는 TOP 5 영화 누적 관객수 비교 다중 선그래프]
 with tab3:
-    st.subheader("🏆 누적관객수 TOP 5 영화 비교")
+    st.subheader("🏆 long-run TOP 5 영화 누적 관객수 비교 (TOP10 차트 20일 이상 유지)")
 
-    # 1. 누적관객수가 가장 높은 상위 5개 영화 이름 추출
-    top5_movies = movie_rank[:5]
+    # 1. 영화별 등장 일수(데이터에 등장한 횟수) 계산
+    movie_days = data.groupby("영화명")["기준일자"].count()
 
-    # 2. 전체 데이터에서 TOP 5 영화의 데이터만 필터링
+    # 2. 등장 일수가 20일 이상인 영화만 필터링
+    filtered_movies_20days = movie_days[movie_days >= 20].index
+
+    # 3. 20일 이상 등장한 영화들 중에서 누적관객수 상위 5개 영화 선택
+    top5_movies = (
+        data[data["영화명"].isin(filtered_movies_20days)]
+        .groupby("영화명")["누적관객수"]
+        .max()
+        .sort_values(ascending=False)
+        .head(5)
+        .index.tolist()
+    )
+
+    # 4. 최종 선택된 TOP 5 영화의 전체 데이터 필터링
     top5_df = data[data["영화명"].isin(top5_movies)]
 
-    # 3. Plotly 다중 선그래프 생성 (color='영화명' 옵션으로 색상 구분 및 범례 자동 생성)
+    # 5. Plotly 다중 선그래프 생성
     fig3 = px.line(
         top5_df,
         x="기준일자",
         y="누적관객수",
-        color="영화명",  # 영화별로 선 색상을 다르게 지정하고 범례 표시
-        title="누적관객수 TOP 5 영화의 기준일자별 누적 관객수 추이 비교",
+        color="영화명",  # 영화별로 선 색상 구분 및 범례 표시
+        title="20일 이상 차트 유지 영화 중 TOP 5의 누적 관객수 추이 비교",
         markers=False,
     )
 
-    # 그래프 레이아웃 커스텀
     fig3.update_layout(
         xaxis_title="기준일자",
         yaxis_title="누적 관객수 (명)",
         hovermode="x unified",
-        legend_title_text="영화명",  # 범례 제목 설정
+        legend_title_text="영화명",
     )
 
-    # Streamlit 화면에 Plotly 그래프 출력
     st.plotly_chart(fig3, use_container_width=True)
 
-    # 그래프 하단 설명 문구 공간
+    # 그래프 하단 설명 문구
     st.info(
-        f"💡 **이 그래프로 알 수 있는 것:** 가장 흥행한 5개 영화({', '.join(top5_movies)})의 관객 동원 속도와 최종 흥행 규모를 서로 비교할 수 있습니다."
+        f"💡 **이 그래프로 알 수 있는 것:** TOP10 차트에 20일 이상 장기 집계된 주요 흥행작({', '.join(top5_movies)})의 누적 관객수 증가 추이와 꾸준한 흥행력을 비교해볼 수 있습니다."
     )
