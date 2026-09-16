@@ -178,3 +178,72 @@ st.markdown("---")
 st.markdown(
     "**이 그래프로 알 수 있는 것:** 주요 장르별 관객 수의 중앙값과 범위를 비교할 수 있으며, 이상치(Outlier) 점을 통해 해당 장르 내에서 대흥행을 이끌어낸 극소수의 '대박' 작품들을 한눈에 확인할 수 있습니다."
 )
+
+st.markdown("<br><br>", unsafe_allow_html=True)
+
+# ---------------------------------------------------------
+# 여섯 번째 구역: 개봉일 스크린 수 vs 총 관객 수 버블 차트 (첫 주 관객 수 = 크기)
+# ---------------------------------------------------------
+st.subheader("6. 개봉일 스크린 수, 총 관객 수 및 첫 주 관객 수의 버블 차트")
+
+# 플롯리 버블 차트 생성
+fig6 = px.scatter(
+    df,
+    x="first_scrn",
+    y="total_audi",
+    size="first_week_audi",
+    color="genre",
+    hover_name="movieNm",
+    size_max=40,  # 버블 최대 크기 지정
+    title="개봉일 스크린 수 vs 총 관객 수 (버블 크기: 첫 주 관객 수)",
+    labels={
+        "first_scrn": "개봉일 스크린 수",
+        "total_audi": "총 관객 수",
+        "first_week_audi": "첫 주 관객 수",
+        "genre": "장르",
+    },
+    hover_data={
+        "first_scrn": ":,d",
+        "total_audi": ":,d",
+        "first_week_audi": ":,d",
+    },
+)
+
+st.plotly_chart(fig6, use_container_width=True)
+
+# 그래프 설명 구역
+st.markdown("---")
+st.markdown(
+    "**이 그래프로 알 수 있는 것:** 개봉일 스크린 수와 최종 관객 수 외에도, 버블 크기를 통해 '개봉 첫 주 초반 흥행 동력(첫 주 관객 수)'이 최종 성과 및 스크린 확보에 미친 선순환 관계를 입체적으로 확인할 수 있습니다."
+)
+
+st.markdown("<br><br>", unsafe_allow_html=True)
+
+# ---------------------------------------------------------
+# 일곱 번째 구역: 국가별-장르별 영화 편수 선버스트 차트
+# ---------------------------------------------------------
+st.subheader("7. 제작 국가 및 장르별 영화 편수 분포 (선버스트)")
+
+# 국가 및 장르별 영화 편수 집계 Dataframe 생성
+sunburst_df = df.groupby(["nation", "genre"]).size().reset_index(name="count")
+
+# 플롯리 선버스트 차트 생성
+fig7 = px.sunburst(
+    sunburst_df,
+    path=["nation", "genre"],
+    values="count",
+    title="제작 국가 → 장르별 영화 편수 계층 구조",
+    color="nation",
+)
+
+fig7.update_traces(
+    hovertemplate="<b>%{label}</b><br>영화 편수: %{value}편<extra></extra>"
+)
+
+st.plotly_chart(fig7, use_container_width=True)
+
+# 그래프 설명 구역
+st.markdown("---")
+st.markdown(
+    "**이 그래프로 알 수 있는 것:** 제작 국가별 전체 점유율과 함께, 각 국가 내에서 어떤 장르의 영화가 주로 개봉했는지 계층적 비중을 다차원적으로 파악할 수 있습니다."
+)
