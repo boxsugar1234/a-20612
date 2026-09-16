@@ -14,7 +14,7 @@ def load_data():
     df = pd.read_csv(url)
 
     # 장르가 결측치/기타 타입일 수 있으므로 문자열 변환 후 처리
-    # 세로막대(|) 기호로 여러 개 적힌 장르는 첫 번째 장르만 extraction
+    # 세로막대(|) 기호로 여러 개 적힌 장르는 첫 번째 장르만 추출
     df["genre"] = df["genre"].astype(str).str.split("|").str[0]
     return df
 
@@ -111,4 +111,70 @@ top_movie_audi = top_movie["total_audi"]
 st.markdown("---")
 st.markdown(
     f"**이 그래프로 알 수 있는 것:** 대부분의 영화는 관객 수 100만 명 미만의 하위 구간에 밀집해 있으며, 가장 많은 관객을 동원한 영화는 **'{top_movie_name}'**(약 {top_movie_audi:,.0f}명)입니다."
+)
+
+st.markdown("<br><br>", unsafe_allow_html=True)
+
+# ---------------------------------------------------------
+# 네 번째 구역: 개봉일 스크린 수 vs 총 관객 수 산점도
+# ---------------------------------------------------------
+st.subheader("4. 개봉일 스크린 수와 총 관객 수의 관계")
+
+# 플롯리 산점도 생성
+fig4 = px.scatter(
+    df,
+    x="first_scrn",
+    y="total_audi",
+    color="genre",
+    hover_name="movieNm",
+    title="개봉일 스크린 수 대비 총 관객 수 분포",
+    labels={
+        "first_scrn": "개봉일 스크린 수",
+        "total_audi": "총 관객 수",
+        "genre": "장르",
+    },
+    hover_data={"first_scrn": ":,d", "total_audi": ":,d"},
+)
+
+fig4.update_traces(marker=dict(size=9, opacity=0.8))
+
+st.plotly_chart(fig4, use_container_width=True)
+
+# 그래프 설명 구역
+st.markdown("---")
+st.markdown(
+    "**이 그래프로 알 수 있는 것:** 개봉일 스크린 수가 많을수록 대체로 총 관객 수도 증가하는 양의 상관관계를 보이며, 장르별 선점 스크린 규모와 최종 흥행 성과 간의 관계를 확인할 수 있습니다."
+)
+
+st.markdown("<br><br>", unsafe_allow_html=True)
+
+# ---------------------------------------------------------
+# 다섯 번째 구역: 영화 10편 이상 장르별 총 관객 수 박스플롯
+# ---------------------------------------------------------
+st.subheader("5. 주요 장르별 총 관객 수 분포 (10편 이상 장르)")
+
+# 영화가 10편 이상인 장르 필터링
+genre_counts_series = df["genre"].value_counts()
+top_genres = genre_counts_series[genre_counts_series >= 10].index
+df_filtered = df[df["genre"].isin(top_genres)]
+
+# 플롯리 박스플롯 생성
+fig5 = px.box(
+    df_filtered,
+    x="genre",
+    y="total_audi",
+    color="genre",
+    points="outliers",  # 이상치를 점으로 표현
+    hover_name="movieNm",  # 점에 마우스를 올릴 때 영화명 표시
+    title="10편 이상 개봉한 주요 장르별 관객 수 분포",
+    labels={"genre": "장르", "total_audi": "총 관객 수"},
+    hover_data={"total_audi": ":,d"},
+)
+
+st.plotly_chart(fig5, use_container_width=True)
+
+# 그래프 설명 구역
+st.markdown("---")
+st.markdown(
+    "**이 그래프로 알 수 있는 것:** 주요 장르별 관객 수의 중앙값과 범위를 비교할 수 있으며, 이상치(Outlier) 점을 통해 해당 장르 내에서 대흥행을 이끌어낸 극소수의 '대박' 작품들을 한눈에 확인할 수 있습니다."
 )
